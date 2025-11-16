@@ -59,24 +59,4 @@ No componente de login há credenciais de teste exibidas como exemplo. Um par co
 npm run build
 ```
 
-O conteúdo de produção fica na pasta `dist/`.
-
-## Contribuição
-
-1. Abra uma issue descrevendo a mudança
-2. Faça um branch, commit e PR
-
-## Licença
-
-MIT
-
-  # Event Manager Web App Design
-
-  This is a code bundle for Event Manager Web App Design. The original project is available at https://www.figma.com/design/IJEAoY0PQrXeNN5CysBHAb/Event-Manager-Web-App-Design.
-
-  ## Running the code
-
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
   
