@@ -13,6 +13,7 @@ import { ManageEventsPage } from './components/pages/admin/ManageEventsPage';
 import { CheckInPage } from './components/pages/admin/CheckInPage';
 import { EmailsPage } from './components/pages/admin/EmailsPage';
 import { LogsPage } from './components/pages/admin/LogsPage';
+import { UsersPage } from './components/pages/admin/UsersPage';
 import { Event, Registration, Certificate } from './types';
 import { mockEvents, mockRegistrations, mockCertificates, mockLogs } from './lib/mockData';
 import { Toaster } from './components/ui/sonner';
@@ -168,6 +169,8 @@ function AppContent() {
       switch (currentPage) {
         case 'dashboard':
           return <DashboardPage />;
+        case 'users':
+          return <UsersPage />;
         case 'manage-events':
           return <ManageEventsPage />;
         case 'checkin':
@@ -235,7 +238,7 @@ function AppContent() {
           </div>
         </main>
       </div>
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </div>
   );
 }

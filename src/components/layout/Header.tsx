@@ -14,6 +14,7 @@ import {
 } from '../ui/dropdown-menu';
 import { motion } from 'motion/react';
 import { toast } from 'sonner@2.0.3';
+import { EditProfileDialog } from '../profile/EditProfileDialog';
 
 interface HeaderProps {
   onOpenMobileMenu?: () => void;
@@ -23,6 +24,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
   const { user, logout } = useAuth();
   const { isOnline, pendingSync, syncNow } = useOffline();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -122,7 +124,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
@@ -135,6 +137,11 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
           </DropdownMenu>
         </div>
       </div>
+      <EditProfileDialog
+        open={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
+
     </header>
   );
 }

@@ -8,9 +8,10 @@ export interface User {
   id: number;
   nome: string;
   email: string;
+  senha?: string;
   isAdmin: boolean;
-  created_at?: string;
-  updated_at?: string;
+  cpf?: string;
+  telefone?: string;
 }
 
 // GET /usuarios
@@ -34,13 +35,32 @@ export async function getCurrentUser(): Promise<User> {
   });
 }
 
-// PUT /usuarios/:id - atualizar usuário (inventado)
+// POST /usuarios - criar usuário (admin)
+export async function createUser(data: {
+  nome: string;
+  email: string;
+  senha: string;
+  isAdmin?: boolean;
+  cpf?: string;
+  telefone?: string;
+}): Promise<User> {
+  // Map frontend fields to backend expected names
+  return apiRequest<User>('/usuarios', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// PUT /usuarios/:id - atualizar usuário
 export async function updateUser(
   id: number,
   data: {
     nome?: string;
     email?: string;
     senha?: string;
+    isAdmin?: boolean;
+    cpf?: string;
+    telefone?: string;
   }
 ): Promise<User> {
   return apiRequest<User>(`/usuarios/${id}`, {

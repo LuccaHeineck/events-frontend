@@ -9,36 +9,38 @@ interface OfflineContextType {
 const OfflineContext = createContext<OfflineContextType | undefined>(undefined);
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
 
-  useEffect(() => {
-    const handleOnline = () => {
+  // Verifica conectividade real com backend
+  async function checkConnection() {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      await fetch('http://177.44.248.81:8080', {
+        method: "GET",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
       setIsOnline(true);
-      // Auto sync when coming back online
-      const pending = localStorage.getItem('pendingActions');
-      if (pending) {
-        const actions = JSON.parse(pending);
-        setPendingSync(actions.length);
-      }
-    };
+    } catch {
+      setIsOnline(false);
+    }
+  }
 
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+  useEffect(() => {
+    checkConnection();
+    const interval = setInterval(checkConnection, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const syncNow = async () => {
     const pending = localStorage.getItem('pendingActions');
     if (!pending) return;
 
-    // Simulate sync
+    // Simular sync
     await new Promise(resolve => setTimeout(resolve, 1500));
     localStorage.removeItem('pendingActions');
     setPendingSync(0);
@@ -53,8 +55,6 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
 
 export function useOffline() {
   const context = useContext(OfflineContext);
-  if (context === undefined) {
-    throw new Error('useOffline must be used within an OfflineProvider');
-  }
+  if (!context) throw new Error('useOffline must be used within OfflineProvider');
   return context;
 }

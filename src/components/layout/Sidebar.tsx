@@ -8,7 +8,8 @@ import {
   Settings, 
   CheckSquare, 
   Mail,
-  Database
+  Database,
+  Users as UsersIcon
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -31,6 +32,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { id: 'manage-events', label: 'Gerenciar Eventos', icon: Settings },
     { id: 'checkin', label: 'Presenças / Check-in', icon: CheckSquare },
     { id: 'emails', label: 'Enviar E-mails', icon: Mail },
+    { id: 'users', label: 'Usuários', icon: UsersIcon },
     { id: 'logs', label: 'Sincronização', icon: Database },
   ];
 

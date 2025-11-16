@@ -6,8 +6,9 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, cpf?: string, telefone?: string) => Promise<void>;
   isLoading: boolean;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,7 +18,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user on mount
     const storedUser = localStorage.getItem('eventManagerUser');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -28,40 +28,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, senha: string) => {
     try {
       const response = await apiLogin(email, senha);
-      
-      // Salvar token
+
       localStorage.setItem('auth_token', response.token);
-      
-      // Mapear resposta da API para formato do User
+
       const userMapped: User = {
-        id: Date.now().toString(),
+        id: response.id?.toString() ?? Date.now().toString(),
         name: response.nome,
         email: response.email,
+        cpf: response.cpf ?? '',
+        telefone: response.telefone ?? '',
         isAdmin: response.isAdmin,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${response.nome}`
       };
-      
+
       setUser(userMapped);
       localStorage.setItem('eventManagerUser', JSON.stringify(userMapped));
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      }
-      throw new Error('Erro ao fazer login');
+      const message = error instanceof Error ? error.message : 'Erro ao fazer login';
+      throw new Error(message);
     }
   };
 
-  const signup = async (name: string, email: string, senha: string) => {
+  const signup = async (name: string, email: string, senha: string, cpf?: string, telefone?: string) => {
     try {
-      const response = await apiRegister(name, email, senha);
-      
-      // Após registro, fazer login automaticamente
+      await apiRegister({ name, email, senha, cpf, telefone });
       await login(email, senha);
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      }
-      throw new Error('Erro ao criar conta');
+      const message = error instanceof Error ? error.message : 'Erro ao criar conta';
+      throw new Error(message);
     }
   };
 
@@ -72,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, signup, isLoading, setUser }}>
       {children}
     </AuthContext.Provider>
   );
