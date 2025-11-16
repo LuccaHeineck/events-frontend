@@ -38,14 +38,10 @@ O app será servido por padrão em `http://localhost:3000` ou na próxima porta 
 O frontend espera que a variável `GATEWAY_URL` em `src/lib/api/config.ts` aponte para o seu gateway/backend. Exemplo:
 
 ```ts
-export const GATEWAY_URL = 'http://177.44.248.81:8080';
+export const GATEWAY_URL = 'http://123.12.123.12:1234';
 ```
 
 Após alterar, reinicie o dev server.
-
-### Nota sobre CORS
-
-Se o login falhar no navegador com erro de CORS (requisição OPTIONS bloqueada), configure CORS no seu backend (events-gateway). Uma solução rápida é adicionar um mapeamento CORS global no Spring Boot ou configurar `spring.cloud.gateway.globalcors` se estiver usando Spring Cloud Gateway.
 
 ## Credenciais de teste
 
