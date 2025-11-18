@@ -3,7 +3,7 @@
 // Altere o GATEWAY_URL aqui para apontar para seu backend
 // ====================================
 
-export const GATEWAY_URL = 'http://localhost:8080';
+export const GATEWAY_URL = 'http://177.44.248.81:8080';
 
 // Helper para fazer requisições
 export async function apiRequest<T>(

@@ -1,57 +1,47 @@
+// types.ts
+
+// ------------------ USUÁRIOS ------------------
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  cpf: string;
-  telefone: string;
-  isAdmin: boolean;
+	id: number;
+	nome: string;
+	email: string;
+	cpf?: string;
+	telefone?: string;
+	isAdmin: boolean;
+	syncPending?: boolean; // para ações offline
 }
 
+// ------------------ EVENTOS ------------------
 export interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  location: string;
-  category: string;
-  maxAttendees: number;
-  currentAttendees: number;
-  status: 'open' | 'closed' | 'ended';
-  banner?: string;
-  certificateTemplate?: string;
+	id_evento: number;
+	titulo: string;
+	data_inicio: string;
+	data_fim: string;
+	local: string;
 }
 
+// ------------------ INSCRIÇÕES ------------------
 export interface Registration {
-  id: string;
-  userId: string;
-  eventId: string;
-  status: 'active' | 'cancelled' | 'completed';
-  checkedIn: boolean;
-  registeredAt: string;
-  syncPending?: boolean;
+	id_inscricao: number;
+	id_usuario: number;
+	id_evento: number;
+	data_inscricao: string;
+	data_cancelamento?: string;
+	status: 0 | 1; // 0 = cancelado, 1 = ativo
+	syncPending?: boolean; // para ações offline
 }
 
+// ------------------ CHECK-INS ------------------
+export interface CheckIn {
+	id_checkin: number;
+	id_inscricao: number;
+	data_checkin: string;
+}
+
+// ------------------ CERTIFICADOS ------------------
 export interface Certificate {
-  id: string;
-  eventId: string;
-  userId: string;
-  code: string;
-  issuedAt: string;
-  validationUrl: string;
-}
-
-export interface Log {
-  id: string;
-  timestamp: string;
-  endpoint: string;
-  user: string;
-  status: 'success' | 'error';
-  method: string;
-}
-
-export interface KPI {
-  label: string;
-  value: number;
-  change?: number;
-  icon: string;
+	id_certificado: number;
+	id_checkin: number;
+	data_emissao: string;
+	hash_confirmacao: string;
 }

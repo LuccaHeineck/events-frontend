@@ -5,34 +5,25 @@ import { apiRequest } from './config';
 // ====================================
 
 export interface Event {
-  id: number;
+  id_evento: number;
   titulo: string;
-  descricao?: string;
   data_inicio: string;
   data_fim: string;
   local: string;
-  vagas_totais?: number;
-  vagas_disponiveis?: number;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface CreateEventRequest {
   titulo: string;
-  descricao?: string;
   data_inicio: string;
   data_fim: string;
   local: string;
-  vagas_totais?: number;
 }
 
 export interface UpdateEventRequest {
   titulo?: string;
-  descricao?: string;
   data_inicio?: string;
   data_fim?: string;
   local?: string;
-  vagas_totais?: number;
 }
 
 // GET /eventos
@@ -73,12 +64,12 @@ export async function deleteEvent(id: number): Promise<void> {
 }
 
 // GET /eventos/:id/estatisticas (inventado - para dashboard)
-export async function getEventStats(id: number): Promise<{
-  total_inscritos: number;
-  total_checkins: number;
-  total_certificados: number;
-}> {
-  return apiRequest(`/eventos/${id}/estatisticas`, {
-    method: 'GET',
-  });
-}
+// export async function getEventStats(id: number): Promise<{
+//   total_inscritos: number;
+//   total_checkins: number;
+//   total_certificados: number;
+// }> {
+//   return apiRequest(`/eventos/${id}/estatisticas`, {
+//     method: 'GET',
+//   });
+// }

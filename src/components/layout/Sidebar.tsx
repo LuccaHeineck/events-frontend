@@ -28,8 +28,8 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   ];
 
   const adminMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'manage-events', label: 'Gerenciar Eventos', icon: Settings },
+//    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+//    { id: 'manage-events', label: 'Gerenciar Eventos', icon: Settings },
     { id: 'checkin', label: 'Presenças / Check-in', icon: CheckSquare },
     { id: 'emails', label: 'Enviar E-mails', icon: Mail },
     { id: 'users', label: 'Usuários', icon: UsersIcon },

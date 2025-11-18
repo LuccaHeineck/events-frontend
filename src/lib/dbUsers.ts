@@ -8,3 +8,7 @@ export async function localSaveUser(user: LocalUser) {
 export async function localGetUsers() {
 	return await db.users.toArray();
 }
+
+export async function localDeleteUser(id: number) {
+    await db.users.delete(id);
+}

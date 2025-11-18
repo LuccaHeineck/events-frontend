@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Event, Registration } from '../../../types';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -8,20 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Search, UserCheck, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { motion } from 'motion/react';
+import { getEvents } from '../../../lib/api/events';
 
 interface CheckInPageProps {
-  events: Event[];
   registrations: Registration[];
   onCheckIn: (registrationId: string) => void;
   onQuickRegister: (name: string, email: string, eventId: string) => void;
 }
 
 export function CheckInPage({ 
-  events, 
   registrations, 
   onCheckIn,
   onQuickRegister 
 }: CheckInPageProps) {
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [quickRegisterData, setQuickRegisterData] = useState({
@@ -29,8 +29,21 @@ export function CheckInPage({
     email: '',
   });
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const data = await getEvents();
+        setEvents(data);
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao carregar eventos');
+      }
+    };
+    fetchEvents();
+  }, []);
+
   const activeEvents = useMemo(() => {
-    return events.filter((e) => e.status !== 'ended');
+    return events; // não há mais campo status, mostra todos
   }, [events]);
 
   const filteredRegistrations = useMemo(() => {
@@ -40,8 +53,7 @@ export function CheckInPage({
       .filter((r) => r.eventId === selectedEventId && r.status === 'active')
       .filter((r) => {
         if (!searchQuery) return true;
-        // In a real app, we'd fetch user data here
-        return true;
+        return true; // ainda não implementado busca por nome/email
       });
   }, [registrations, selectedEventId, searchQuery]);
 
@@ -86,8 +98,8 @@ export function CheckInPage({
               </SelectTrigger>
               <SelectContent>
                 {activeEvents.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title} - {new Date(event.date).toLocaleDateString('pt-BR')}
+                  <SelectItem key={event.id_evento} value={String(event.id_evento)}>
+                    {event.titulo} - {new Date(event.data_inicio).toLocaleDateString('pt-BR')}
                   </SelectItem>
                 ))}
               </SelectContent>

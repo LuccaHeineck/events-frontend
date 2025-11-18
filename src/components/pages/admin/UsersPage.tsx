@@ -6,17 +6,16 @@ import { Card, CardContent } from '../../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-import { getUsers, createUser, updateUser, deleteUser, User } from '../../../lib/api/users';
-
+import { getUsers, createUser, updateUser, deleteUser } from '../../../lib/api/users';
+import { localGetUsers, localSaveUser, localDeleteUser } from '../../../lib/dbUsers';
 import { useOffline } from '../../../contexts/OfflineContext';
-import { localGetUsers, localSaveUser } from '../../../lib/dbUsers';
+import { LocalUser } from '../../../lib/db';
 
 export function UsersPage() {
-	const [users, setUsers] = useState<User[]>([]);
+	const [users, setUsers] = useState<LocalUser[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [editingUser, setEditingUser] = useState<User | null>(null);
+	const [editingUser, setEditingUser] = useState<LocalUser | null>(null);
 
 	const { isOnline, registerPending } = useOffline();
 
@@ -31,73 +30,85 @@ export function UsersPage() {
 
 	useEffect(() => {
 		fetchUsers();
-	}, []);
+	}, [isOnline]);
 
 	const fetchUsers = async () => {
 		setIsLoading(true);
-		try {
-			if (isOnline) {
-				const data = await getUsers();
 
-				for (const u of data) {
-					await localSaveUser(u);
+		try {
+			let loadedUsers: LocalUser[] = [];
+
+			if (isOnline) {
+				// Busca na API
+				const apiUsers = await getUsers();
+
+				// Converte e salva cada usuário no IndexedDB
+				for (const u of apiUsers) {
+					const userToSave: LocalUser = {
+						id: u.id,
+						nome: u.nome ?? "",
+						email: u.email ?? "",
+						senha: u.senha ?? "",
+						isAdmin: u.isAdmin ?? false,
+						cpf: u.cpf ?? "",
+						telefone: u.telefone ?? "",
+						syncPending: false,
+					};
+
+					await localSaveUser(userToSave);
 				}
 
-				setUsers(data);
+				// Lê do IndexedDB (fonte única)
+				loadedUsers = await localGetUsers();
 			} else {
-				const cached = await localGetUsers();
-				setUsers(cached);
+				// Offline → apenas IndexedDB
+				loadedUsers = await localGetUsers();
 			}
+
+			setUsers(loadedUsers);
+		} catch (err) {
+			console.error("Erro ao buscar usuários:", err);
+			toast.error("Não foi possível carregar os usuários");
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
+
 	// --- Criação offline ---
-	const createUserOffline = async (data) => {
-		const localUser = {
+	const createUserOffline = async (data: typeof form) => {
+		const localUser: LocalUser = {
 			...data,
 			id: Date.now(),
 			syncPending: true,
 		};
 
 		await localSaveUser(localUser);
+		await registerPending("POST", "/usuarios", data);
 
-		await registerPending(
-			"POST",
-			"http://localhost:8080/usuarios",
-			data
-		);
+		setUsers(await localGetUsers());
 	};
 
 	// --- Edição offline ---
-	const updateUserOffline = async (id, data) => {
-		const localUser = {
+	const updateUserOffline = async (id: number, data: typeof form) => {
+		const localUser: LocalUser = {
 			...data,
 			id,
 			syncPending: true,
 		};
 
 		await localSaveUser(localUser);
+		await registerPending("PUT", `/usuarios/${id}`, data);
 
-		await registerPending(
-			"PUT",
-			`http://localhost:8080/usuarios/${id}`,
-			data
-		);
+		setUsers(await localGetUsers());
 	};
 
 	// --- Remoção offline ---
-	const deleteUserOffline = async (id) => {
-		await registerPending(
-			"DELETE",
-			`http://localhost:8080/usuarios/${id}`
-		);
+	const deleteUserOffline = async (id: number) => {
+		await registerPending("DELETE", `/usuarios/${id}`);
 
-		const remaining = (await localGetUsers()).filter(u => u.id !== id);
-		for (const u of remaining) {
-			await localSaveUser(u);
-		}
+		await localDeleteUser(id);
+		setUsers(await localGetUsers());
 	};
 
 	const openCreate = () => {
@@ -106,15 +117,15 @@ export function UsersPage() {
 		setIsModalOpen(true);
 	};
 
-	const openEdit = (user: User) => {
+	const openEdit = (user: LocalUser) => {
 		setEditingUser(user);
 		setForm({
 			nome: user.nome,
 			email: user.email,
 			senha: "",
 			isAdmin: user.isAdmin,
-			cpf: user.cpf || "",
-			telefone: user.telefone || "",
+			cpf: user.cpf ?? "",
+			telefone: user.telefone ?? "",
 		});
 		setIsModalOpen(true);
 	};
@@ -122,7 +133,6 @@ export function UsersPage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// --- Fluxo offline ---
 		if (!isOnline) {
 			if (editingUser) {
 				await updateUserOffline(editingUser.id, form);
@@ -131,26 +141,18 @@ export function UsersPage() {
 				await createUserOffline(form);
 				toast.info("Usuário criado localmente (offline)");
 			}
-
 			setIsModalOpen(false);
-			fetchUsers();
 			return;
 		}
 
-		// --- Fluxo online ---
 		try {
 			if (editingUser) {
-				await updateUser(editingUser.id, {
-					...form,
-					senha: form.senha || undefined
-				});
-
+				await updateUser(editingUser.id, { ...form, senha: form.senha || undefined });
 				toast.success("Usuário atualizado");
 			} else {
 				await createUser(form);
 				toast.success("Usuário criado");
 			}
-
 			setIsModalOpen(false);
 			fetchUsers();
 		} catch (err) {
@@ -165,12 +167,12 @@ export function UsersPage() {
 		if (!isOnline) {
 			await deleteUserOffline(id);
 			toast.info("Remoção salva localmente (offline)");
-			fetchUsers();
 			return;
 		}
 
 		try {
 			await deleteUser(id);
+			await localDeleteUser(id);
 			toast.success("Usuário deletado");
 			fetchUsers();
 		} catch (err) {

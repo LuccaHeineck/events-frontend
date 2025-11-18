@@ -51,55 +51,58 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
 	const registerPending = async (type: string, url: string, body?: any) => {
 		await addPendingAction({
 			type,
-			payload: { url, body },
+			payload: { 
+				url: "http://177.44.248.81:8080" + url,  // 👈 CORREÇÃO AQUI
+				body 
+			},
 		});
 
 		const pending = await getPendingActions();
 		setPendingSync(pending.length);
 	};
 
+
 	// --- Sincronização ---
 	const syncNow = async () => {
-    console.log(await getPendingActions());
+	const actions = await getPendingActions();
+	if (actions.length === 0) return;
 
-		const actions = await getPendingActions();
-		if (actions.length === 0) return;
+	for (const action of actions) {
+		try {
+			console.log("➡️ Enviando ação pendente:", action);
 
-		for (const action of actions) {
-      try {
-        console.log("➡️ Enviando ação pendente:", action);
+			const { url, body } = action.payload;
 
-        const rawPayload =
-          typeof action.payload === "string"
-            ? JSON.parse(action.payload) // <- CORREÇÃO PRINCIPAL
-            : action.payload;
+			const token = localStorage.getItem('auth_token');
 
-        const { url, body } = rawPayload;
+			const response = await fetch(url, {
+				method: action.type,
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+				body: body ? JSON.stringify(body) : undefined
+			});
 
-        const token = localStorage.getItem('auth_token');
+			if (!response.ok) {
+				throw new Error(`Falha ao enviar: ${response.status}`);
+			}
 
-        const response = await fetch(url, {
-          method: action.type,
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: body ? JSON.stringify(body) : undefined
-        });
+			console.log("✅ Ação pendente enviada:", action);
+		} catch (e) {
+			console.error("❌ Erro ao enviar ação pendente:", e);
+			// Interrompe sincronização se alguma falhar
+			return;
+		}
+	}
 
-        console.log("⬅️ Resposta:", response.status, await response.text());
-      } catch (e) {
-        console.error("❌ Erro ao enviar ação pendente:", e);
-        break;
-      }
-    }
+	// Se todas as requisições foram bem-sucedidas, limpa o pending
+	await clearPendingActions();
+	setPendingSync(0);
+	console.log("✅ Todas as ações pendentes foram sincronizadas e removidas");
+};
 
-		// Se todas deram certo, limpa
-		await clearPendingActions();
 
-		const remaining = await getPendingActions();
-		setPendingSync(remaining.length);
-	};
 
 	return (
 		<OfflineContext.Provider value={{

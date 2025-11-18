@@ -30,22 +30,23 @@ export function EditProfileDialog({ open, onClose }: Props) {
         }
 
         const payload = {
-        nome: form.name,
-        email: form.email,
-        cpf: form.cpf,
-        telefone: form.telefone,
+          nome: form.name,
+          email: form.email,
+          cpf: form.cpf,
+          telefone: form.telefone,
+          isAdmin: user.isAdmin,
         };
 
         const updated = await updateUser(user.id, payload);
 
         // Atualiza somente os campos que o header realmente usa
         const merged = {
-        ...user,
-        name: updated.nome,
-        email: updated.email,
-        isAdmin: updated.isAdmin, // se existir na resposta
-        cpf: updated.cpf,
-        telefone: updated.telefone,
+          ...user,
+          name: updated.nome,
+          email: updated.email,
+          isAdmin: updated.isAdmin, // se existir na resposta
+          cpf: updated.cpf,
+          telefone: updated.telefone,
         };
 
         setUser(merged);
