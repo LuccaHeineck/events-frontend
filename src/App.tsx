@@ -1,41 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { OfflineProvider } from './contexts/OfflineContext';
+import React, { useState, useEffect } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { OfflineProvider } from "./contexts/OfflineContext";
 
-import { LoginPage } from './components/auth/LoginPage';
-import { Header } from './components/layout/Header';
-import { Sidebar } from './components/layout/Sidebar';
-import { MobileNav } from './components/layout/MobileNav';
+import { LoginPage } from "./components/auth/LoginPage";
+import { Header } from "./components/layout/Header";
+import { Sidebar } from "./components/layout/Sidebar";
+import { MobileNav } from "./components/layout/MobileNav";
 
-import { EventsPage } from './components/pages/EventsPage';
-import { RegistrationsPage } from './components/pages/RegistrationsPage';
-import { CertificatesPage } from './components/pages/CertificatesPage';
+import { EventsPage } from "./components/pages/EventsPage";
+import { RegistrationsPage } from "./components/pages/RegistrationsPage";
+import { CertificatesPage } from "./components/pages/CertificatesPage";
 
-import { CheckInPage } from './components/pages/admin/CheckInPage';
-import { EmailsPage } from './components/pages/admin/EmailsPage';
-import { LogsPage } from './components/pages/admin/LogsPage';
-import { UsersPage } from './components/pages/admin/UsersPage';
+import { CheckInPage } from "./components/pages/admin/CheckInPage";
+import { EmailsPage } from "./components/pages/admin/EmailsPage";
+import { LogsPage } from "./components/pages/admin/LogsPage";
+import { UsersPage } from "./components/pages/admin/UsersPage";
 
-import { Event, Registration, Certificate } from './types';
-import { mockEvents, mockRegistrations, mockCertificates, mockLogs } from './lib/mockData';
+import { Event, Registration, Certificate } from "./types";
+import {
+  mockEvents,
+  mockRegistrations,
+  mockCertificates,
+  mockLogs,
+} from "./lib/mockData";
 
-import { Toaster } from './components/ui/sonner';
-import './lib/syncIndexedDb';
-import './styles/globals.css';
+import { Toaster } from "./components/ui/sonner";
+import "./lib/syncIndexedDb";
+import "./styles/globals.css";
 
 function AppContent() {
   const { user, isLoading } = useAuth();
 
-  const [currentPage, setCurrentPage] = useState('');
+  const [currentPage, setCurrentPage] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [events, setEvents] = useState<Event[]>(mockEvents);
-  const [registrations, setRegistrations] = useState<Registration[]>(mockRegistrations);
-  const [certificates, setCertificates] = useState<Certificate[]>(mockCertificates);
+  const [registrations, setRegistrations] =
+    useState<Registration[]>(mockRegistrations);
+  const [certificates, setCertificates] =
+    useState<Certificate[]>(mockCertificates);
 
   useEffect(() => {
     if (user && !currentPage) {
-      setCurrentPage(user.isAdmin ? 'checkin' : 'events');
+      setCurrentPage(user.isAdmin ? "checkin" : "events");
     }
   }, [user, currentPage]);
 
@@ -53,9 +60,13 @@ function AppContent() {
   if (!user) return <LoginPage />;
 
   const updateEventCount = (eventId: string, delta: number) => {
-    setEvents(events.map(e =>
-      e.id === eventId ? { ...e, currentAttendees: Math.max(0, e.currentAttendees + delta) } : e
-    ));
+    setEvents(
+      events.map((e) =>
+        e.id === eventId
+          ? { ...e, currentAttendees: Math.max(0, e.currentAttendees + delta) }
+          : e
+      )
+    );
   };
 
   const handleRegister = (eventId: string) => {
@@ -63,7 +74,7 @@ function AppContent() {
       id: `r${Date.now()}`,
       userId: user.id,
       eventId,
-      status: 'active',
+      status: "active",
       checkedIn: false,
       registeredAt: new Date().toISOString(),
     };
@@ -73,21 +84,34 @@ function AppContent() {
   };
 
   const handleCancelRegistration = (eventId: string) => {
-    setRegistrations(registrations.map(r =>
-      r.eventId === eventId && r.userId === user.id ? { ...r, status: 'cancelled' } : r
-    ));
+    setRegistrations(
+      registrations.map((r) =>
+        r.eventId === eventId && r.userId === user.id
+          ? { ...r, status: "cancelled" }
+          : r
+      )
+    );
     updateEventCount(eventId, -1);
   };
 
   const handleCheckIn = (eventIdOrRegistrationId: string) => {
-    const registration = registrations.find(r => r.id === eventIdOrRegistrationId);
+    const registration = registrations.find(
+      (r) => r.id === eventIdOrRegistrationId
+    );
 
-    setRegistrations(registrations.map(r => {
-      if (registration && r.id === eventIdOrRegistrationId) return { ...r, checkedIn: true };
-      if (!registration && r.eventId === eventIdOrRegistrationId && r.userId === user.id)
-        return { ...r, checkedIn: true };
-      return r;
-    }));
+    setRegistrations(
+      registrations.map((r) => {
+        if (registration && r.id === eventIdOrRegistrationId)
+          return { ...r, checkedIn: true };
+        if (
+          !registration &&
+          r.eventId === eventIdOrRegistrationId &&
+          r.userId === user.id
+        )
+          return { ...r, checkedIn: true };
+        return r;
+      })
+    );
   };
 
   const handleGenerateCertificate = (eventId: string) => {
@@ -102,21 +126,29 @@ function AppContent() {
 
     setCertificates([...certificates, cert]);
 
-    setRegistrations(registrations.map(r =>
-      r.eventId === eventId && r.userId === user.id ? { ...r, status: 'completed' } : r
-    ));
+    setRegistrations(
+      registrations.map((r) =>
+        r.eventId === eventId && r.userId === user.id
+          ? { ...r, status: "completed" }
+          : r
+      )
+    );
 
-    setCurrentPage('certificates');
+    setCurrentPage("certificates");
   };
 
-  const handleQuickRegister = (name: string, email: string, eventId: string) => {
+  const handleQuickRegister = (
+    name: string,
+    email: string,
+    eventId: string
+  ) => {
     const newUserId = `u${Date.now()}`;
 
     const newRegistration: Registration = {
       id: `r${Date.now()}`,
       userId: newUserId,
       eventId,
-      status: 'active',
+      status: "active",
       checkedIn: true,
       registeredAt: new Date().toISOString(),
     };
@@ -128,8 +160,9 @@ function AppContent() {
   const renderPage = () => {
     if (user.isAdmin) {
       switch (currentPage) {
-        case 'users': return <UsersPage />;
-        case 'checkin':
+        case "users":
+          return <UsersPage />;
+        case "checkin":
           return (
             <CheckInPage
               events={events}
@@ -138,14 +171,24 @@ function AppContent() {
               onQuickRegister={handleQuickRegister}
             />
           );
-        case 'emails': return <EmailsPage />;
-        case 'logs': return <LogsPage logs={mockLogs} />;
-        default: return <CheckInPage events={events} registrations={registrations} onCheckIn={handleCheckIn} onQuickRegister={handleQuickRegister} />;
+        case "emails":
+          return <EmailsPage />;
+        case "logs":
+          return <LogsPage logs={mockLogs} />;
+        default:
+          return (
+            <CheckInPage
+              events={events}
+              registrations={registrations}
+              onCheckIn={handleCheckIn}
+              onQuickRegister={handleQuickRegister}
+            />
+          );
       }
     }
 
     switch (currentPage) {
-      case 'events':
+      case "events":
         return (
           <EventsPage
             registrations={registrations}
@@ -154,10 +197,14 @@ function AppContent() {
             onCheckIn={handleCheckIn}
           />
         );
-      case 'registrations':
-        return <RegistrationsPage onGenerateCertificate={handleGenerateCertificate} />;
-      case 'certificates':
-        return <CertificatesPage certificates={certificates} />;
+      case "registrations":
+        return (
+          <RegistrationsPage
+            onGenerateCertificate={handleGenerateCertificate}
+          />
+        );
+      case "certificates":
+        return <CertificatesPage />;
       default:
         return (
           <EventsPage

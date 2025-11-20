@@ -1,34 +1,52 @@
-import React, { useState, useMemo } from 'react';
-import { Event, Certificate } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
-import { CertificateModal, ValidateCertificateModal } from '../certificates/CertificateModal';
-import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
-import { Award, Calendar, CheckCircle } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState, useMemo, useEffect } from "react";
+import { Event, Certificate } from "../../types";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  CertificateModal,
+  ValidateCertificateModal,
+} from "../certificates/CertificateModal";
+import { Card, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
+import { Award, Calendar, CheckCircle } from "lucide-react";
+import { motion } from "motion/react";
+import {
+  getCertificateByHash,
+  getCertificatesByUserId,
+} from "../../lib/api/certificates";
 
-interface CertificatesPageProps {
-  events: Event[];
-  certificates: Certificate[];
-}
-
-export function CertificatesPage({ events, certificates }: CertificatesPageProps) {
+export function CertificatesPage() {
   const { user } = useAuth();
-  const [selectedCertificate, setSelectedCertificate] = useState<{
-    certificate: Certificate;
-    event: Event;
-  } | null>(null);
-  const [showValidateModal, setShowValidateModal] = useState(false);
+  const [userCertificates, setUserCertificates] = useState<Certificate[]>([]);
 
-  const userCertificates = useMemo(() => {
-    return certificates
-      .filter((c) => c.userId === user?.id)
-      .map((cert) => ({
-        certificate: cert,
-        event: events.find((e) => e.id === cert.eventId),
-      }))
-      .filter((item) => item.event !== undefined);
-  }, [certificates, events, user]);
+  useEffect(() => {
+    async function fetchUserCertificates() {
+      if (!user?.id) return;
+
+      try {
+        const response = await getCertificatesByUserId(Number(user.id));
+        setUserCertificates(response);
+      } catch (err) {
+        console.error("Erro ao buscar inscrições:", err);
+      } finally {
+      }
+    }
+
+    fetchUserCertificates();
+  }, []);
+
+  async function handleCertificateDetails(hash_confirmacao: string) {
+    try {
+      const blob = await getCertificateByHash(hash_confirmacao);
+      const url = URL.createObjectURL(blob);
+
+      window.open(url, "_blank");
+    } catch (err) {
+      console.error("Erro ao visualizar o certificado:", err);
+    }
+  }
+
+  const [selectedCertificate, setSelectedCertificate] = useState<Blob>();
+  const [showValidateModal, setShowValidateModal] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -58,12 +76,12 @@ export function CertificatesPage({ events, certificates }: CertificatesPageProps
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {userCertificates.map(({ certificate, event }) => {
-            if (!event) return null;
+          {userCertificates.map((certificado) => {
+            if (!certificado.evento) return null;
 
             return (
               <motion.div
-                key={certificate.id}
+                key={certificado.id_certificado}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
@@ -86,36 +104,46 @@ export function CertificatesPage({ events, certificates }: CertificatesPageProps
                   <CardContent className="space-y-4 p-6">
                     <div>
                       <h3 className="mb-1 line-clamp-2 text-foreground">
-                        {event.title}
+                        {certificado.evento.titulo}
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p>Data início</p>
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {new Date(event.date).toLocaleDateString('pt-BR')}
+                          {new Date(
+                            certificado.evento.data_inicio
+                          ).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p>Data fim</p>
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {new Date(
+                            certificado.evento.data_fim
+                          ).toLocaleDateString("pt-BR")}
                         </span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="rounded-md bg-muted/50 p-2">
-                        <p className="text-xs text-muted-foreground">
-                          Código:
-                        </p>
+                        <p className="text-xs text-muted-foreground">Código:</p>
                         <p className="font-mono text-xs text-foreground">
-                          {certificate.code}
+                          {certificado.hash_confirmacao}
                         </p>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Emitido em:{' '}
-                        {new Date(certificate.issuedAt).toLocaleDateString(
-                          'pt-BR'
+                        Emitido em:{" "}
+                        {new Date(certificado.data_emissao).toLocaleDateString(
+                          "pt-BR"
                         )}
                       </p>
                     </div>
 
                     <Button
                       onClick={() =>
-                        setSelectedCertificate({ certificate, event })
+                        handleCertificateDetails(certificado.hash_confirmacao)
                       }
                       variant="outline"
                       className="w-full"
@@ -130,12 +158,12 @@ export function CertificatesPage({ events, certificates }: CertificatesPageProps
         </div>
       )}
 
-      <CertificateModal
+      {/* <CertificateModal
         certificate={selectedCertificate?.certificate || null}
         event={selectedCertificate?.event || null}
         isOpen={!!selectedCertificate}
         onClose={() => setSelectedCertificate(null)}
-      />
+      /> */}
 
       <ValidateCertificateModal
         isOpen={showValidateModal}

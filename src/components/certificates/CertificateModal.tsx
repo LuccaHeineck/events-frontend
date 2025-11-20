@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { Certificate, Event } from '../../types';
-import { Download, Award, CheckCircle, X } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { useAuth } from '../../contexts/AuthContext';
-import { toast } from 'sonner@2.0.3';
+import React, { useState } from "react";
+import { Certificate, Event } from "../../types";
+import { Download, Award, CheckCircle, X } from "lucide-react";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { useAuth } from "../../contexts/AuthContext";
+import { toast } from "sonner@2.0.3";
+import { getCertificateByHash } from "../../lib/api/certificates";
 
 interface CertificateModalProps {
   certificate: Certificate | null;
@@ -15,13 +16,18 @@ interface CertificateModalProps {
   onClose: () => void;
 }
 
-export function CertificateModal({ certificate, event, isOpen, onClose }: CertificateModalProps) {
+export function CertificateModal({
+  certificate,
+  event,
+  isOpen,
+  onClose,
+}: CertificateModalProps) {
   const { user } = useAuth();
 
   if (!certificate || !event) return null;
 
   const handleDownload = () => {
-    toast.success('Certificado sendo preparado para download...');
+    toast.success("Certificado sendo preparado para download...");
   };
 
   return (
@@ -37,7 +43,7 @@ export function CertificateModal({ certificate, event, isOpen, onClose }: Certif
             <div className="absolute right-4 top-4 text-primary/10">
               <Award className="h-32 w-32" />
             </div>
-            
+
             <div className="relative space-y-6 text-center">
               <div className="space-y-2">
                 <Award className="mx-auto h-16 w-16 text-primary" />
@@ -57,10 +63,10 @@ export function CertificateModal({ certificate, event, isOpen, onClose }: Certif
               <div className="space-y-2">
                 <p className="text-muted-foreground">Realizado em</p>
                 <p className="text-foreground">
-                  {new Date(event.date).toLocaleDateString('pt-BR', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
+                  {new Date(event.date).toLocaleDateString("pt-BR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
                   })}
                 </p>
                 <p className="text-muted-foreground">{event.location}</p>
@@ -68,11 +74,13 @@ export function CertificateModal({ certificate, event, isOpen, onClose }: Certif
 
               <div className="pt-6">
                 <div className="mx-auto max-w-md space-y-2 rounded-lg bg-background/50 p-4">
-                  <p className="text-xs text-muted-foreground">Código de autenticação:</p>
+                  <p className="text-xs text-muted-foreground">
+                    Código de autenticação:
+                  </p>
                   <p className="font-mono text-primary">{certificate.code}</p>
                   <p className="text-xs text-muted-foreground">
-                    Emitido em:{' '}
-                    {new Date(certificate.issuedAt).toLocaleDateString('pt-BR')}
+                    Emitido em:{" "}
+                    {new Date(certificate.issuedAt).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
               </div>
@@ -91,7 +99,7 @@ export function CertificateModal({ certificate, event, isOpen, onClose }: Certif
 
           <div className="rounded-lg border border-border bg-muted/50 p-4">
             <p className="text-sm text-muted-foreground">
-              Este certificado pode ser validado em:{' '}
+              Este certificado pode ser validado em:{" "}
               <a
                 href={certificate.validationUrl}
                 target="_blank"
@@ -113,36 +121,55 @@ interface ValidateCertificateModalProps {
   onClose: () => void;
 }
 
-export function ValidateCertificateModal({ isOpen, onClose }: ValidateCertificateModalProps) {
-  const [code, setCode] = useState('');
+export function ValidateCertificateModal({
+  isOpen,
+  onClose,
+}: ValidateCertificateModalProps) {
+  const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     valid: boolean;
     message: string;
   } | null>(null);
 
-  const handleValidate = async () => {
+  // const handleValidate = async () => {
+  //   setIsValidating(true);
+  //   setValidationResult(null);
+
+  //   // Simulate API call
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  //   // Mock validation
+  //   if (code.startsWith("CERT-")) {
+  //     setValidationResult({
+  //       valid: true,
+  //       message: "Certificado válido e autêntico!",
+  //     });
+  //   } else {
+  //     setValidationResult({
+  //       valid: false,
+  //       message: "Código de certificado inválido.",
+  //     });
+  //   }
+
+  //   setIsValidating(false);
+  // };
+
+  async function handleValidate(hash_confirmacao: string) {
     setIsValidating(true);
     setValidationResult(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await getCertificateByHash(hash_confirmacao);
+      const contentType = response.headers.get("Content-Type");
 
-    // Mock validation
-    if (code.startsWith('CERT-')) {
-      setValidationResult({
-        valid: true,
-        message: 'Certificado válido e autêntico!',
-      });
-    } else {
-      setValidationResult({
-        valid: false,
-        message: 'Código de certificado inválido.',
-      });
+      const url = URL.createObjectURL(response);
+
+      window.open(url, "_blank");
+    } catch (err) {
+      console.error("Erro ao visualizar o certificado:", err);
     }
-
-    setIsValidating(false);
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -156,7 +183,7 @@ export function ValidateCertificateModal({ isOpen, onClose }: ValidateCertificat
             <Label htmlFor="code">Código do Certificado</Label>
             <Input
               id="code"
-              placeholder="CERT-2025-..."
+              placeholder="9c25d10a75524ed6b3be50f490e48436"
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
@@ -167,15 +194,15 @@ export function ValidateCertificateModal({ isOpen, onClose }: ValidateCertificat
             disabled={!code || isValidating}
             className="w-full"
           >
-            {isValidating ? 'Validando...' : 'Validar Certificado'}
+            {isValidating ? "Validando..." : "Validar Certificado"}
           </Button>
 
           {validationResult && (
             <div
               className={`rounded-lg border p-4 ${
                 validationResult.valid
-                  ? 'border-green-500/20 bg-green-500/10'
-                  : 'border-red-500/20 bg-red-500/10'
+                  ? "border-green-500/20 bg-green-500/10"
+                  : "border-red-500/20 bg-red-500/10"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -186,7 +213,7 @@ export function ValidateCertificateModal({ isOpen, onClose }: ValidateCertificat
                 )}
                 <p
                   className={
-                    validationResult.valid ? 'text-green-500' : 'text-red-500'
+                    validationResult.valid ? "text-green-500" : "text-red-500"
                   }
                 >
                   {validationResult.message}
