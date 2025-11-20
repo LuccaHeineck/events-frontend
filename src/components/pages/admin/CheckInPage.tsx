@@ -29,10 +29,13 @@ export function CheckInPage({
     email: '',
   });
 
+  // ----------------------
+  // LOAD EVENTS (UPDATED)
+  // ----------------------
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const data = await getEvents();
+        const data = await getEvents(); // já retorna array de Event
         setEvents(data);
       } catch (err) {
         console.error(err);
@@ -43,7 +46,7 @@ export function CheckInPage({
   }, []);
 
   const activeEvents = useMemo(() => {
-    return events; // não há mais campo status, mostra todos
+    return events; // não há campo status
   }, [events]);
 
   const filteredRegistrations = useMemo(() => {
@@ -53,7 +56,7 @@ export function CheckInPage({
       .filter((r) => r.eventId === selectedEventId && r.status === 'active')
       .filter((r) => {
         if (!searchQuery) return true;
-        return true; // ainda não implementado busca por nome/email
+        return true;
       });
   }, [registrations, selectedEventId, searchQuery]);
 
@@ -99,7 +102,7 @@ export function CheckInPage({
               <SelectContent>
                 {activeEvents.map((event) => (
                   <SelectItem key={event.id_evento} value={String(event.id_evento)}>
-                    {event.titulo} - {new Date(event.data_inicio).toLocaleDateString('pt-BR')}
+                    {event.titulo} — {new Date(event.data_inicio).toLocaleDateString('pt-BR')}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialo
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUsers, createUser, updateUser, deleteUser } from '../../../lib/api/users';
-import { localGetUsers, localSaveUser, localDeleteUser } from '../../../lib/dbUsers';
+import { localGetUsers, localSaveUser, localDeleteUser, localClearUsers } from '../../../lib/dbUsers';
 import { useOffline } from '../../../contexts/OfflineContext';
 import { LocalUser } from '../../../lib/db';
 
@@ -39,30 +39,32 @@ export function UsersPage() {
 			let loadedUsers: LocalUser[] = [];
 
 			if (isOnline) {
-				// Busca na API
-				const apiUsers = await getUsers();
+				try {
+					// 1 — limpa o IndexedDB
+					await localClearUsers();
 
-				// Converte e salva cada usuário no IndexedDB
-				for (const u of apiUsers) {
-					const userToSave: LocalUser = {
-						id: u.id,
-						nome: u.nome ?? "",
-						email: u.email ?? "",
-						senha: u.senha ?? "",
-						isAdmin: u.isAdmin ?? false,
-						cpf: u.cpf ?? "",
-						telefone: u.telefone ?? "",
-						syncPending: false,
-					};
+					// 2 — busca da API real
+					const apiUsers = await getUsers();
 
-					await localSaveUser(userToSave);
+					// 3 — salva no IndexedDB exatamente o que veio da API
+					for (const u of apiUsers) {
+						const userToSave: LocalUser = {
+							id: u.id,
+							nome: u.nome ?? "",
+							email: u.email ?? "",
+							senha: u.senha ?? "",
+							isAdmin: u.isAdmin ?? false,
+							cpf: u.cpf ?? "",
+							telefone: u.telefone ?? "",
+							syncPending: false,
+						};
+						await localSaveUser(userToSave);
+					}
+
+					loadedUsers = await localGetUsers();
+				} catch {
+					loadedUsers = await localGetUsers();
 				}
-
-				// Lê do IndexedDB (fonte única)
-				loadedUsers = await localGetUsers();
-			} else {
-				// Offline → apenas IndexedDB
-				loadedUsers = await localGetUsers();
 			}
 
 			setUsers(loadedUsers);

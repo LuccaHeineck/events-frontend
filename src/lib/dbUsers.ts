@@ -2,13 +2,18 @@ import { db } from './db';
 import { LocalUser } from './db';
 
 export async function localSaveUser(user: LocalUser) {
-	await db.users.put(user);
+    await db.users.put(user);
 }
 
 export async function localGetUsers() {
-	return await db.users.toArray();
+    return await db.users.toArray();
 }
 
 export async function localDeleteUser(id: number) {
     await db.users.delete(id);
+}
+
+/** Remove todos os usuários do IndexedDB */
+export async function localClearUsers() {
+    await db.users.clear();
 }
