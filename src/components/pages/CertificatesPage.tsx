@@ -1,10 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Event, Certificate } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
-import {
-  CertificateModal,
-  ValidateCertificateModal,
-} from "../certificates/CertificateModal";
+import { ValidateCertificateModal } from "../certificates/CertificateModal";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Award, Calendar, CheckCircle } from "lucide-react";
@@ -157,13 +154,6 @@ export function CertificatesPage() {
           })}
         </div>
       )}
-
-      {/* <CertificateModal
-        certificate={selectedCertificate?.certificate || null}
-        event={selectedCertificate?.event || null}
-        isOpen={!!selectedCertificate}
-        onClose={() => setSelectedCertificate(null)}
-      /> */}
 
       <ValidateCertificateModal
         isOpen={showValidateModal}
