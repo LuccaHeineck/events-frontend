@@ -1,14 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Event, Registration } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
-import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Calendar, MapPin, CheckCircle, XCircle, Award, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
-import { motion } from 'motion/react';
-import { getUserRegistrations, cancelRegistration } from '../../lib/api';
-import { Alert, AlertDescription } from '../ui/alert';
+import React, { useState, useEffect } from "react";
+import { Certificate, Event, Subscription } from "../../types";
+import { useAuth } from "../../contexts/AuthContext";
+import { Card, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import {
+  Calendar,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  Award,
+  AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner@2.0.3";
+import { motion } from "motion/react";
+import { getUserRegistrations, cancelRegistration } from "../../lib/api";
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface RegistrationsPageProps {
   onGenerateCertificate: (eventId: string) => void;
@@ -18,7 +25,7 @@ export function RegistrationsPage({
   onGenerateCertificate,
 }: RegistrationsPageProps) {
   const { user } = useAuth();
-  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +38,12 @@ export function RegistrationsPage({
         setIsLoading(true);
         setError(null);
         const data = await getUserRegistrations(Number(user.id));
-        setRegistrations(data);
+        setSubscriptions(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar inscrições');
-        console.error('Erro ao buscar inscrições:', err);
+        setError(
+          err instanceof Error ? err.message : "Erro ao carregar inscrições"
+        );
+        console.error("Erro ao buscar inscrições:", err);
       } finally {
         setIsLoading(false);
       }
@@ -46,19 +55,25 @@ export function RegistrationsPage({
   const handleCancel = async (registrationId: number) => {
     try {
       await cancelRegistration(registrationId);
-      
+
       // Atualizar lista local
-      setRegistrations(prev => 
-        prev.map(reg => 
-          reg.id === registrationId 
-            ? { ...reg, status: 'cancelled' } 
+      setSubscriptions((prev) =>
+        prev.map((reg) =>
+          reg.id_inscricao === registrationId
+            ? {
+                ...reg,
+                status: false,
+                data_cancelamento: new Date().toISOString(),
+              }
             : reg
         )
       );
-      
-      toast.success('Inscrição cancelada com sucesso');
+
+      toast.success("Inscrição cancelada com sucesso");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao cancelar inscrição');
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao cancelar inscrição"
+      );
     }
   };
 
@@ -91,7 +106,7 @@ export function RegistrationsPage({
         </Alert>
       )}
 
-      {registrations.length === 0 ? (
+      {subscriptions.length === 0 ? (
         <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-dashed border-border">
           <div className="text-center">
             <p className="text-muted-foreground">
@@ -104,15 +119,15 @@ export function RegistrationsPage({
         </div>
       ) : (
         <div className="space-y-4">
-          {registrations.map((registration) => {
-            const event = registration.evento;
+          {subscriptions.map((registration) => {
+            const event = registration.event;
             if (!event) return null;
 
-            const canGenerateCertificate = registration.checked_in;
+            const canGenerateCertificate = registration.checkin;
 
             return (
               <motion.div
-                key={registration.id}
+                key={registration.id_inscricao}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
@@ -124,20 +139,22 @@ export function RegistrationsPage({
                         <div className="flex items-start gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-foreground">{event.titulo}</h3>
-                              {registration.status === 'active' && (
+                              <h3 className="text-foreground">
+                                {event.titulo}
+                              </h3>
+                              {registration.status && (
                                 <Badge className="bg-green-500/10 text-green-500">
                                   Ativo
                                 </Badge>
                               )}
-                              {registration.status === 'cancelled' && (
+                              {!registration.status && (
                                 <Badge className="bg-red-500/10 text-red-500">
                                   Cancelado
                                 </Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-2">
-                              {event.descricao || 'Sem descrição'}
+                              {event.titulo || "Sem descrição"}
                             </p>
                           </div>
                         </div>
@@ -146,14 +163,16 @@ export function RegistrationsPage({
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             <span>
-                              {new Date(event.data_inicio).toLocaleDateString('pt-BR')}
+                              {new Date(event.data_inicio).toLocaleDateString(
+                                "pt-BR"
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             <span>{event.local}</span>
                           </div>
-                          {registration.checked_in ? (
+                          {registration.checkin ? (
                             <div className="flex items-center gap-2 text-green-500">
                               <CheckCircle className="h-4 w-4" />
                               <span>Check-in realizado</span>
@@ -168,21 +187,27 @@ export function RegistrationsPage({
                       </div>
 
                       <div className="flex flex-col gap-2 md:w-auto">
-                        {registration.status === 'active' && (
+                        {registration.status && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleCancel(registration.id)}
+                            onClick={() =>
+                              handleCancel(registration.id_inscricao)
+                            }
                             className="w-full md:w-auto"
                           >
                             Cancelar
                           </Button>
                         )}
 
-                        {canGenerateCertificate && (
+                        {canGenerateCertificate && registration.status && (
                           <Button
                             size="sm"
-                            onClick={() => handleGenerateCertificate(event.id.toString())}
+                            onClick={() =>
+                              handleGenerateCertificate(
+                                event.id_evento.toString()
+                              )
+                            }
                             className="w-full gap-2 md:w-auto"
                           >
                             <Award className="h-4 w-4" />
