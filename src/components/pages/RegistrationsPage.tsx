@@ -14,16 +14,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner@2.0.3";
 import { motion } from "motion/react";
-import { getUserRegistrations, cancelRegistration } from "../../lib/api";
+import {
+  getUserRegistrations,
+  cancelRegistration,
+  generateCertificate,
+} from "../../lib/api";
 import { Alert, AlertDescription } from "../ui/alert";
 
 interface RegistrationsPageProps {
-  onGenerateCertificate: (eventId: string) => void;
+  onNavigate: (page: string) => void;
 }
 
-export function RegistrationsPage({
-  onGenerateCertificate,
-}: RegistrationsPageProps) {
+export function RegistrationsPage({ onNavigate }: RegistrationsPageProps) {
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,14 +54,26 @@ export function RegistrationsPage({
     fetchRegistrations();
   }, [user?.id]);
 
-  const handleCancel = async (registrationId: number) => {
+  // Se o certificado já existe apenas consultar na tela
+  async function handleIssueCertificate(subscriptionId: number) {
     try {
-      await cancelRegistration(registrationId);
+      const blob = await generateCertificate(subscriptionId);
+      const url = URL.createObjectURL(blob);
+
+      window.open(url, "_blank");
+    } catch (err) {
+      onNavigate("certificates");
+    }
+  }
+
+  const handleCancel = async (subscriptionId: number) => {
+    try {
+      await cancelRegistration(subscriptionId);
 
       // Atualizar lista local
       setSubscriptions((prev) =>
         prev.map((reg) =>
-          reg.id_inscricao === registrationId
+          reg.id_inscricao === subscriptionId
             ? {
                 ...reg,
                 status: false,
@@ -75,10 +89,6 @@ export function RegistrationsPage({
         err instanceof Error ? err.message : "Erro ao cancelar inscrição"
       );
     }
-  };
-
-  const handleGenerateCertificate = (eventId: string) => {
-    onGenerateCertificate(eventId);
   };
 
   if (isLoading) {
@@ -187,33 +197,36 @@ export function RegistrationsPage({
                       </div>
 
                       <div className="flex flex-col gap-2 md:w-auto">
-                        {registration.status && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleCancel(registration.id_inscricao)
-                            }
-                            className="w-full md:w-auto"
-                          >
-                            Cancelar
-                          </Button>
-                        )}
+                        {registration.status &&
+                          new Date() <= new Date(event.data_fim) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleCancel(registration.id_inscricao)
+                              }
+                              className="w-full md:w-auto"
+                            >
+                              Cancelar
+                            </Button>
+                          )}
 
-                        {canGenerateCertificate && registration.status && (
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleGenerateCertificate(
-                                event.id_evento.toString()
-                              )
-                            }
-                            className="w-full gap-2 md:w-auto"
-                          >
-                            <Award className="h-4 w-4" />
-                            Emitir certificado
-                          </Button>
-                        )}
+                        {canGenerateCertificate &&
+                          registration.status &&
+                          new Date() > new Date(event.data_fim) && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                handleIssueCertificate(
+                                  registration.id_inscricao
+                                )
+                              }
+                              className="w-full gap-2 md:w-auto"
+                            >
+                              <Award className="h-4 w-4" />
+                              Emitir certificado
+                            </Button>
+                          )}
                       </div>
                     </div>
                   </CardContent>

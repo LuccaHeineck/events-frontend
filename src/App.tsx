@@ -16,7 +16,7 @@ import { EmailsPage } from "./components/pages/admin/EmailsPage";
 import { LogsPage } from "./components/pages/admin/LogsPage";
 import { UsersPage } from "./components/pages/admin/UsersPage";
 
-import { Event, Registration, Certificate } from "./types";
+import { Event, Subscription, Certificate } from "./types";
 import {
   mockEvents,
   mockRegistrations,
@@ -36,7 +36,7 @@ function AppContent() {
 
   const [events, setEvents] = useState<Event[]>(mockEvents);
   const [registrations, setRegistrations] =
-    useState<Registration[]>(mockRegistrations);
+    useState<Subscription[]>(mockRegistrations);
   const [certificates, setCertificates] =
     useState<Certificate[]>(mockCertificates);
 
@@ -70,7 +70,7 @@ function AppContent() {
   };
 
   const handleRegister = (eventId: string) => {
-    const newRegistration: Registration = {
+    const newRegistration: Subscription = {
       id: `r${Date.now()}`,
       userId: user.id,
       eventId,
@@ -114,29 +114,6 @@ function AppContent() {
     );
   };
 
-  const handleGenerateCertificate = (eventId: string) => {
-    const cert: Certificate = {
-      id: `c${Date.now()}`,
-      eventId,
-      userId: user.id,
-      code: `CERT-${Date.now()}`,
-      issuedAt: new Date().toISOString(),
-      validationUrl: `https://eventmanager.com/validate/${eventId}`,
-    };
-
-    setCertificates([...certificates, cert]);
-
-    setRegistrations(
-      registrations.map((r) =>
-        r.eventId === eventId && r.userId === user.id
-          ? { ...r, status: "completed" }
-          : r
-      )
-    );
-
-    setCurrentPage("certificates");
-  };
-
   const handleQuickRegister = (
     name: string,
     email: string,
@@ -144,7 +121,7 @@ function AppContent() {
   ) => {
     const newUserId = `u${Date.now()}`;
 
-    const newRegistration: Registration = {
+    const newRegistration: Subscription = {
       id: `r${Date.now()}`,
       userId: newUserId,
       eventId,
@@ -198,11 +175,7 @@ function AppContent() {
           />
         );
       case "registrations":
-        return (
-          <RegistrationsPage
-            onGenerateCertificate={handleGenerateCertificate}
-          />
-        );
+        return <RegistrationsPage onNavigate={setCurrentPage} />;
       case "certificates":
         return <CertificatesPage />;
       default:

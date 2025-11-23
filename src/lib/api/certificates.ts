@@ -35,34 +35,18 @@ export async function getCertificatesByUserId(
   return response.certificados;
 }
 
-// GET /certificados/:id - obter um certificado específico (inventado)
-// export async function getCertificateById(
-//   id: number
-// ): Promise<CertificateResponse> {
-//   return apiRequest<CertificateResponse>(`/certificados/${id}`, {
-//     method: "GET",
-//   });
-// }
-
-// POST /certificados - gerar certificado (inventado)
-// export async function generateCertificate(
-//   data: CreateCertificateRequest
-// ): Promise<CertificateResponse> {
-//   return apiRequest<CertificateResponse>("/certificados", {
-//     method: "POST",
-//     body: JSON.stringify(data),
-//   });
-// }
-
-// GET /certificados/verificar/:codigo - verificar autenticidade de um certificado (inventado)
-// export async function verifyCertificate(codigo: string): Promise<{
-//   valido: boolean;
-//   certificado?: CertificateResponse;
-// }> {
-//   return apiRequest(`/certificados/verificar/${codigo}`, {
-//     method: "GET",
-//   });
-// }
+// POST /certificados/emitir - gerar certificado (inventado)
+export async function generateCertificate(
+  subscriptionId: number
+): Promise<Blob> {
+  return apiRequest<Promise<Blob>>(
+    `/certificados/emitir/${subscriptionId}`,
+    {
+      method: "POST",
+    },
+    true
+  );
+}
 
 // GET /certificados/:id/download - baixar PDF do certificado (inventado)
 export function downloadCertificatePDF(id: number): string {
