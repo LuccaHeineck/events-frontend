@@ -25,7 +25,7 @@ export interface LocalRegistration {
 	id_evento: number;
 	data_inscricao: string;
 	data_cancelamento?: string | null;
-	status: 0 | 1; // 0 = cancelada, 1 = ativa
+	status: boolean
 }
 
 export interface LocalCheckin {

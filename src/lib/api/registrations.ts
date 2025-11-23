@@ -33,7 +33,7 @@ export async function getUserRegistrations(
 export async function getEventRegistrations(
   eventId: number
 ): Promise<SubscriptionResponse[]> {
-  return apiRequest<SubscriptionResponse[]>(`/inscricoes/evento/${eventId}`, {
+  return apiRequest<SubscriptionResponse[]>(`/eventos/${eventId}/inscricoes`, {
     method: "GET",
   });
 }

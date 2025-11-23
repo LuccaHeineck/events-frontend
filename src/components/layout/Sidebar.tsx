@@ -31,7 +31,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 //    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
 //    { id: 'manage-events', label: 'Gerenciar Eventos', icon: Settings },
     { id: 'checkin', label: 'Presenças / Check-in', icon: CheckSquare },
-    { id: 'emails', label: 'Enviar E-mails', icon: Mail },
+//    { id: 'emails', label: 'Enviar E-mails', icon: Mail },
     { id: 'users', label: 'Usuários', icon: UsersIcon },
     { id: 'logs', label: 'Sincronização', icon: Database },
   ];
@@ -49,7 +49,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <motion.button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors !cursor-pointer ${
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'

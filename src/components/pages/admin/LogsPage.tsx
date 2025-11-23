@@ -71,9 +71,7 @@ export function LogsPage() {
 					{pendingSync > 0 && (
 						<div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
 							<p className="text-sm text-yellow-500">
-								{pendingSync} ação
-								{pendingSync > 1 ? 'es' : ''} pendente
-								{pendingSync > 1 ? 's' : ''} de sincronização
+								{pendingSync} {pendingSync > 1 ? 'ações' : 'ação'} pendente{pendingSync > 1 ? 's' : ''} de sincronização
 							</p>
 						</div>
 					)}

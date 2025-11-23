@@ -46,3 +46,7 @@ export async function localSaveCheckins(checkins: LocalCheckin[]) {
 export async function localGetCheckins(): Promise<LocalCheckin[]> {
 	return await db.checkins.toArray();
 }
+
+export async function updatePendingAction(id: number, payload: any) {
+	return await db.pending.update(id, { payload });
+}

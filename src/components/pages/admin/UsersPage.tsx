@@ -86,7 +86,11 @@ export function UsersPage() {
 		};
 
 		await localSaveUser(localUser);
-		await registerPending("POST", "/usuarios", data);
+
+		await registerPending("POST", "/usuarios", {
+			...data,
+			localId: localUser.id
+		});
 
 		setUsers(await localGetUsers());
 	};
