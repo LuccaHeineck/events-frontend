@@ -18,6 +18,7 @@ export interface Event {
   data_inicio: string;
   data_fim: string;
   local: string;
+  banner?: string;
 }
 
 // ------------------ INSCRIÇÕES ------------------

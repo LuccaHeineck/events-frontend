@@ -69,31 +69,6 @@ function AppContent() {
     );
   };
 
-  const handleRegister = (eventId: string) => {
-    const newRegistration: Subscription = {
-      id: `r${Date.now()}`,
-      userId: user.id,
-      eventId,
-      status: "active",
-      checkedIn: false,
-      registeredAt: new Date().toISOString(),
-    };
-
-    setRegistrations([...registrations, newRegistration]);
-    updateEventCount(eventId, +1);
-  };
-
-  const handleCancelRegistration = (eventId: string) => {
-    setRegistrations(
-      registrations.map((r) =>
-        r.eventId === eventId && r.userId === user.id
-          ? { ...r, status: "cancelled" }
-          : r
-      )
-    );
-    updateEventCount(eventId, -1);
-  };
-
   const handleCheckIn = (eventIdOrRegistrationId: string) => {
     const registration = registrations.find(
       (r) => r.id === eventIdOrRegistrationId
@@ -166,27 +141,13 @@ function AppContent() {
 
     switch (currentPage) {
       case "events":
-        return (
-          <EventsPage
-            registrations={registrations}
-            onRegister={handleRegister}
-            onCancelRegistration={handleCancelRegistration}
-            onCheckIn={handleCheckIn}
-          />
-        );
+        return <EventsPage registrations={registrations} />;
       case "registrations":
         return <RegistrationsPage onNavigate={setCurrentPage} />;
       case "certificates":
         return <CertificatesPage />;
       default:
-        return (
-          <EventsPage
-            registrations={registrations}
-            onRegister={handleRegister}
-            onCancelRegistration={handleCancelRegistration}
-            onCheckIn={handleCheckIn}
-          />
-        );
+        return <EventsPage registrations={registrations} />;
     }
   };
 
