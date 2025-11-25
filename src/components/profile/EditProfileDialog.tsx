@@ -20,44 +20,61 @@ export function EditProfileDialog({ open, onClose }: Props) {
     email: user?.email ?? "",
     cpf: user?.cpf ?? "",
     telefone: user?.telefone ?? "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
-    const handleSave = async () => {
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      toast.error("Nome e email são obrigatórios");
+      return;
+    }
+
+    if (form.newPassword && form.newPassword !== form.confirmPassword) {
+      toast.error("Nova senha e confirmação não coincidem");
+      return;
+    }
+
     try {
-        if (!user?.id) {
+      if (!user?.id) {
         toast.error("Usuário inválido");
         return;
-        }
+      }
 
-        const payload = {
-          nome: form.name,
-          email: form.email,
-          cpf: form.cpf,
-          telefone: form.telefone,
-          isAdmin: user.isAdmin,
-        };
+      const payload: any = {
+        nome: form.name,
+        email: form.email,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        isAdmin: user.isAdmin,
+      };
 
-        const updated = await updateUser(user.id, payload);
+      // Se o usuário quer alterar a senha, coloca diretamente no campo `senha`
+      if (form.newPassword) {
+        payload.senha = form.newPassword;
+      }
 
-        // Atualiza somente os campos que o header realmente usa
-        const merged = {
-          ...user,
-          name: updated.nome,
-          email: updated.email,
-          isAdmin: updated.isAdmin, // se existir na resposta
-          cpf: updated.cpf,
-          telefone: updated.telefone,
-        };
+      const updated = await updateUser(user.id, payload);
 
-        setUser(merged);
-        localStorage.setItem("eventManagerUser", JSON.stringify(merged));
+      const merged = {
+        ...user,
+        name: updated.nome,
+        email: updated.email,
+        isAdmin: updated.isAdmin,
+        cpf: updated.cpf,
+        telefone: updated.telefone,
+      };
 
-        toast.success("Perfil atualizado");
-        onClose();
-    } catch (err) {
-        toast.error("Erro ao atualizar");
+      setUser(merged);
+      localStorage.setItem("eventManagerUser", JSON.stringify(merged));
+
+      toast.success("Perfil atualizado");
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Erro ao atualizar");
     }
-    };
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -72,6 +89,7 @@ export function EditProfileDialog({ open, onClose }: Props) {
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
             />
           </div>
 
@@ -81,6 +99,7 @@ export function EditProfileDialog({ open, onClose }: Props) {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
             />
           </div>
 
@@ -98,6 +117,33 @@ export function EditProfileDialog({ open, onClose }: Props) {
               value={form.telefone}
               onChange={(e) => setForm({ ...form, telefone: e.target.value })}
             />
+          </div>
+
+          <div className="pt-4 border-t space-y-4">
+            <div>
+              <Label className="mb-2">Senha atual</Label>
+              <Input
+                type="password"
+                value={form.currentPassword}
+                onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="mb-2">Nova senha</Label>
+              <Input
+                type="password"
+                value={form.newPassword}
+                onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="mb-2">Confirmar nova senha</Label>
+              <Input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+              />
+            </div>
           </div>
         </div>
 
