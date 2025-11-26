@@ -139,13 +139,17 @@ export function EventDetailsModal({
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            {!registration && new Date() < new Date(event.data_inicio) && (
+            {!registration && new Date() < new Date(event.data_fim) && (
               <Button
                 onClick={() => handleRegistration(event.id_evento, user?.id)}
                 disabled={loadingSubscription}
                 className="w-full"
               >
-                {loadingSubscription ? "Processando..." : "Inscreva-se"}
+                {loadingSubscription
+                  ? "Processando..."
+                  : new Date() < new Date(event.data_inicio)
+                  ? "Inscreva-se"
+                  : "Inscreva-se (Evento em andamento)"}
               </Button>
             )}
 
