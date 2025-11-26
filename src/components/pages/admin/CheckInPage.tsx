@@ -202,13 +202,12 @@ export function CheckInPage(): JSX.Element {
         if (isOnline) {
           const resp = await getEventRegistrations(Number(selectedEventId));
 
-          // FALHA / SUCESSO = FALSE / NÃO EXISTE "inscricoes"
           if (
             !resp ||
             (resp as any).success === false ||
             !(resp as any).inscricoes
           ) {
-            setRegistrations([]);                          // 🔥 LIMPA SEMPRE
+            setRegistrations([]);
             toast.info((resp as any)?.message || 'Nenhuma inscrição encontrada.');
             return;
           }
