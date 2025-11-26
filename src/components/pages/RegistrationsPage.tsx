@@ -29,6 +29,7 @@ export function RegistrationsPage({ onNavigate }: RegistrationsPageProps) {
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingCancel, setLoadingCancel] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Buscar inscrições da API
@@ -68,6 +69,7 @@ export function RegistrationsPage({ onNavigate }: RegistrationsPageProps) {
 
   const handleCancel = async (subscriptionId: number) => {
     try {
+      setLoadingCancel(subscriptionId);
       await cancelRegistration(subscriptionId);
 
       // Atualizar lista local
@@ -88,6 +90,8 @@ export function RegistrationsPage({ onNavigate }: RegistrationsPageProps) {
       toast.error(
         err instanceof Error ? err.message : "Erro ao cancelar inscrição"
       );
+    } finally {
+      setLoadingCancel(null);
     }
   };
 
@@ -202,12 +206,17 @@ export function RegistrationsPage({ onNavigate }: RegistrationsPageProps) {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={
+                                loadingCancel === registration.id_inscricao
+                              }
                               onClick={() =>
                                 handleCancel(registration.id_inscricao)
                               }
                               className="w-full md:w-auto"
                             >
-                              Cancelar
+                              {loadingCancel === registration.id_inscricao
+                                ? "Processando..."
+                                : "Cancelar"}
                             </Button>
                           )}
 

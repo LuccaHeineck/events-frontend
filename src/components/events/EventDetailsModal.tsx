@@ -24,6 +24,8 @@ export function EventDetailsModal({
 
   const { user } = useAuth();
   const [registration, setRegistration] = useState<Subscription | null>(null);
+  const [loadingSubscription, setLoadingSubscription] =
+    useState<boolean>(false);
 
   if (!event) return null;
 
@@ -48,15 +50,25 @@ export function EventDetailsModal({
 
   async function handleRegistration(id_evento: number, user_id: number) {
     try {
+      setLoadingSubscription(true);
       const response = await createRegistration({
         id_usuario: user_id,
         id_evento: id_evento,
       });
       console.log(response);
       toast.success("Inscrição realizada com sucesso!");
+
+      setRegistration({
+        id_evento,
+        id_usuario: user_id,
+        status: true,
+        checkin: null,
+      });
     } catch (err) {
       toast.error("Erro ao inscrever o usuário no evento");
       console.error("Erro ao inscrever o usuário no evento:", err);
+    } finally {
+      setLoadingSubscription(false);
     }
   }
 
@@ -127,14 +139,17 @@ export function EventDetailsModal({
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            {!registration && new Date() < new Date(event.data_inicio) && (
+            {!registration && new Date() < new Date(event.data_fim) && (
               <Button
                 onClick={() => handleRegistration(event.id_evento, user?.id)}
+                disabled={loadingSubscription}
                 className="w-full"
               >
-                {new Date() < new Date(event.data_inicio)
-                  ? "Inscrever-se"
-                  : "Encerrado"}
+                {loadingSubscription
+                  ? "Processando..."
+                  : new Date() < new Date(event.data_inicio)
+                  ? "Inscreva-se"
+                  : "Inscreva-se (Evento em andamento)"}
               </Button>
             )}
 
