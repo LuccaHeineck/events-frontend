@@ -30,7 +30,7 @@ import {
   createRegistration,
   checkInRegistration,
 } from '../../../lib/api/registrations';
-import { createUser } from '../../../lib/api/users';
+import { createUser, getUsers } from '../../../lib/api/users';
 
 import { useOffline } from '../../../contexts/OfflineContext';
 import { localGetUsers, localSaveUser } from '../../../lib/dbUsers';
@@ -96,6 +96,36 @@ export function CheckInPage(): JSX.Element {
 
     return mapped;
   }
+
+  useEffect(() => {
+    const syncUsers = async () => {
+      // Apenas se estiver online
+      if (!isOnline) return;
+
+      try {
+        const apiUsers = await getUsers();
+
+        // Limpa e grava tudo rapidamente
+        // ❗ Caso tenha método clear em dbUsers, use ele. Aqui, sobrescrevemos 1 a 1.
+        for (const u of apiUsers) {
+          await localSaveUser({
+            id: u.id ?? u.id_usuario,
+            nome: u.nome ?? '',
+            email: u.email ?? '',
+            senha: '',
+            cpf: u.cpf ?? '',
+            telefone: u.telefone ?? '',
+            isAdmin: u.isAdmin ?? u.is_admin ?? false,
+            syncPending: false,
+          });
+        }
+      } catch (err) {
+        console.warn('Falha ao sincronizar usuários localmente', err);
+      }
+    };
+
+    syncUsers();
+  }, [isOnline]);
 
   // Carregar eventos (online -> salva localmente; offline -> lê IndexedDB)
   useEffect(() => {
@@ -172,113 +202,22 @@ export function CheckInPage(): JSX.Element {
         if (isOnline) {
           const resp = await getEventRegistrations(Number(selectedEventId));
 
-          if (resp && (resp as any).success === false) {
-            const msg = (resp as any).message || 'Nenhuma inscrição encontrada.';
-            toast.info(msg);
-            setRegistrations([]);
-            setLoadingRegs(false);
+          // FALHA / SUCESSO = FALSE / NÃO EXISTE "inscricoes"
+          if (
+            !resp ||
+            (resp as any).success === false ||
+            !(resp as any).inscricoes
+          ) {
+            setRegistrations([]);                          // 🔥 LIMPA SEMPRE
+            toast.info((resp as any)?.message || 'Nenhuma inscrição encontrada.');
             return;
           }
 
-          if (resp && (resp as any).inscricoes) {
-            const inscricoes = (resp as any).inscricoes as Subscription[];
-            setRegistrations(inscricoes);
-
-            // salvar localmente
-            try {
-              const localRegsToSave = inscricoes.map((s) => ({
-                id_inscricao: s.id_inscricao,
-                id_usuario: s.id_usuario,
-                id_evento: s.id_evento,
-                data_inscricao: s.data_inscricao,
-                data_cancelamento: s.data_cancelamento ?? null,
-                status: s.status ?? true,
-              }));
-              await localSaveRegistrations(localRegsToSave);
-
-              const localCheckinsToSave = inscricoes
-                .filter((s) => !!s.checkin)
-                .map((s) => ({
-                  id_checkin: s.checkin!.id_checkin,
-                  id_inscricao: s.id_inscricao,
-                  data_checkin: s.checkin!.data_checkin,
-                }));
-              if (localCheckinsToSave.length > 0) await localSaveCheckins(localCheckinsToSave);
-
-              const usersToSave = inscricoes
-                .map((s) => s.user)
-                .filter(Boolean)
-                .reduce((acc: any[], u: any) => {
-                  if (!acc.find((x) => x.id === u.id_usuario || x.id === u.id)) {
-                    acc.push(u);
-                  }
-                  return acc;
-                }, []);
-
-              for (const u of usersToSave) {
-                const id = u.id_usuario ?? u.id;
-                await localSaveUser({
-                  id,
-                  nome: u.nome ?? '',
-                  email: u.email ?? '',
-                  senha: '',
-                  isAdmin: u.is_admin ?? u.isAdmin ?? false,
-                  cpf: u.cpf ?? '',
-                  telefone: u.telefone ?? '',
-                  syncPending: false,
-                });
-              }
-            } catch (e) {
-              console.warn('Falha ao salvar dados localmente (sincronização parcial)', e);
-            }
-
-            setLoadingRegs(false);
-            return;
-          }
-
-          if (Array.isArray(resp)) {
-            setRegistrations(resp as Subscription[]);
-            setLoadingRegs(false);
-            return;
-          }
-
-          setRegistrations([]);
-        } else {
-          const localSubs = await buildSubscriptionsFromLocal(Number(selectedEventId));
-          setRegistrations(localSubs);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar inscrições', err);
-        toast.error('Erro ao carregar inscrições do evento');
-      } finally {
-        setLoadingRegs(false);
-      }
-    };
-
-    fetchRegistrations();
-  }, [selectedEventId, isOnline]);
-
-  // Recarrega as inscrições do evento selecionado (útil após ações)
-  const reloadRegistrations = async () => {
-    if (!selectedEventId) return;
-    setLoadingRegs(true);
-    try {
-      if (isOnline) {
-        const resp = await getEventRegistrations(Number(selectedEventId));
-
-        if (resp && (resp as any).success === false) {
-          const msg = (resp as any).message || 'Nenhuma inscrição encontrada.';
-          toast.info(msg);
-          setRegistrations([]);
-          setLoadingRegs(false);
-          return;
-        }
-
-        if (resp && (resp as any).inscricoes) {
+          // OK
           const inscricoes = (resp as any).inscricoes as Subscription[];
           setRegistrations(inscricoes);
 
-          // salvar local
+          // SALVAR LOCAL
           try {
             const localRegsToSave = inscricoes.map((s) => ({
               id_inscricao: s.id_inscricao,
@@ -298,21 +237,100 @@ export function CheckInPage(): JSX.Element {
                 data_checkin: s.checkin!.data_checkin,
               }));
             if (localCheckinsToSave.length > 0) await localSaveCheckins(localCheckinsToSave);
+
+            const usersToSave = inscricoes
+              .map((s) => s.user)
+              .filter(Boolean)
+              .reduce((acc: any[], u: any) => {
+                if (!acc.find((x) => x.id === u.id_usuario || x.id === u.id)) {
+                  acc.push(u);
+                }
+                return acc;
+              }, []);
+
+            for (const u of usersToSave) {
+              const id = u.id_usuario ?? u.id;
+              await localSaveUser({
+                id,
+                nome: u.nome ?? '',
+                email: u.email ?? '',
+                senha: '',
+                isAdmin: u.is_admin ?? u.isAdmin ?? false,
+                cpf: u.cpf ?? '',
+                telefone: u.telefone ?? '',
+                syncPending: false,
+              });
+            }
           } catch (e) {
-            console.warn('Falha ao salvar dados localmente (reload)', e);
+            console.warn('Falha ao salvar dados localmente (sincronização parcial)', e);
           }
 
-          setLoadingRegs(false);
-          return;
+        } else {
+          const localSubs = await buildSubscriptionsFromLocal(Number(selectedEventId));
+          setRegistrations(localSubs);
         }
-
-        if (Array.isArray(resp)) {
-          setRegistrations(resp as Subscription[]);
-          setLoadingRegs(false);
-          return;
-        }
+      } catch (err) {
+        console.error('Erro ao carregar inscrições', err);
+        toast.error(err instanceof Error ? err.message : 'Erro ao carregar inscrições');
 
         setRegistrations([]);
+      } finally {
+        setLoadingRegs(false);
+      }
+    };
+
+    fetchRegistrations();
+  }, [selectedEventId, isOnline]);
+
+  // Recarrega as inscrições do evento selecionado (útil após ações)
+  const reloadRegistrations = async () => {
+    if (!selectedEventId) {
+      setRegistrations([]);
+      return;
+    }
+
+    setLoadingRegs(true);
+    try {
+      if (isOnline) {
+        const resp = await getEventRegistrations(Number(selectedEventId));
+
+        if (
+          !resp ||
+          (resp as any).success === false ||
+          !(resp as any).inscricoes
+        ) {
+          setRegistrations([]);
+          toast.info((resp as any)?.message || 'Nenhuma inscrição encontrada.');
+          return;
+        }
+
+        const inscricoes = (resp as any).inscricoes as Subscription[];
+        setRegistrations(inscricoes);
+
+        // salvar local
+        try {
+          const localRegsToSave = inscricoes.map((s) => ({
+            id_inscricao: s.id_inscricao,
+            id_usuario: s.id_usuario,
+            id_evento: s.id_evento,
+            data_inscricao: s.data_inscricao,
+            data_cancelamento: s.data_cancelamento ?? null,
+            status: s.status ?? true,
+          }));
+          await localSaveRegistrations(localRegsToSave);
+
+          const localCheckinsToSave = inscricoes
+            .filter((s) => !!s.checkin)
+            .map((s) => ({
+              id_checkin: s.checkin!.id_checkin,
+              id_inscricao: s.id_inscricao,
+              data_checkin: s.checkin!.data_checkin,
+            }));
+          if (localCheckinsToSave.length > 0) await localSaveCheckins(localCheckinsToSave);
+        } catch (e) {
+          console.warn('Falha ao salvar dados localmente (reload)', e);
+        }
+
       } else {
         const localSubs = await buildSubscriptionsFromLocal(Number(selectedEventId));
         setRegistrations(localSubs);
@@ -320,6 +338,8 @@ export function CheckInPage(): JSX.Element {
     } catch (err) {
       console.error('Erro ao recarregar inscrições', err);
       toast.error('Erro ao recarregar inscrições');
+
+      setRegistrations([]);
     } finally {
       setLoadingRegs(false);
     }

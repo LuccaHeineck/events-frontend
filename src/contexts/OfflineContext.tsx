@@ -28,7 +28,8 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 2500);
 
-      await fetch('http://177.44.248.81:8080', {
+      // muda de 'http://177.44.248.81:8080' para '/health'
+      await fetch('http://177.44.248.81:8080/health', {
         method: 'GET',
         signal: controller.signal,
       });

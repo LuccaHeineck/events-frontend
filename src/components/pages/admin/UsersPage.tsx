@@ -29,6 +29,20 @@ export function UsersPage() {
 	});
 
 	useEffect(() => {
+	const loadUsers = async () => {
+		if (isOnline) {
+		const apiUsers = await getUsers();
+		setUsers(apiUsers);
+		apiUsers.forEach(u => localSaveUser(...));
+		} else {
+		const localUsers = await localGetUsers();
+		setUsers(localUsers);
+		}
+	}
+	loadUsers();
+	}, [isOnline]);
+
+	useEffect(() => {
 		fetchUsers();
 	}, [isOnline]);
 
@@ -40,13 +54,9 @@ export function UsersPage() {
 
 			if (isOnline) {
 				try {
-					// 1 — limpa o IndexedDB
 					await localClearUsers();
-
-					// 2 — busca da API real
 					const apiUsers = await getUsers();
 
-					// 3 — salva no IndexedDB exatamente o que veio da API
 					for (const u of apiUsers) {
 						const userToSave: LocalUser = {
 							id: u.id,
@@ -63,8 +73,12 @@ export function UsersPage() {
 
 					loadedUsers = await localGetUsers();
 				} catch {
+					// Se der erro na API mas está online, pega do local
 					loadedUsers = await localGetUsers();
 				}
+			} else {
+				// Aqui é o ponto chave: no OFFLINE sempre carregar do local
+				loadedUsers = await localGetUsers();
 			}
 
 			setUsers(loadedUsers);
