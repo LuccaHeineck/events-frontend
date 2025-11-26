@@ -29,6 +29,20 @@ export function UsersPage() {
 	});
 
 	useEffect(() => {
+	const loadUsers = async () => {
+		if (isOnline) {
+		const apiUsers = await getUsers();
+		setUsers(apiUsers);
+		apiUsers.forEach(u => localSaveUser(...));
+		} else {
+		const localUsers = await localGetUsers();
+		setUsers(localUsers);
+		}
+	}
+	loadUsers();
+	}, [isOnline]);
+
+	useEffect(() => {
 		fetchUsers();
 	}, [isOnline]);
 
